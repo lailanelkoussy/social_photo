@@ -15,4 +15,9 @@ public class PhotoDTO {
     private String photoPath;
 
     private String hashtagName;
+
+    @NotNull
+    private int userId;
+
+    private int groupId;
 }

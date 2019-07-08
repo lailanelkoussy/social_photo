@@ -8,4 +8,6 @@ import java.util.List;
 public interface PhotoRepository extends JpaRepository<Photo,Integer> {
 
     List<Photo> findAllByHashtagId(int id);
+
+    List<Photo> findAllByUserId(int userId);
 }
