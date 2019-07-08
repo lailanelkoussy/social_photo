@@ -8,8 +8,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class HashtagService {
@@ -27,7 +29,7 @@ public class HashtagService {
             hashtag.setName(hashtagName);
             return hashtagRepository.save(hashtag);
 
-        } else return hashtagRepository.getByName(hashtagName);
+        } else return hashtagRepository.getByName(hashtagName).get();
 
     }
 
@@ -42,20 +44,35 @@ public class HashtagService {
         } else return false;
     }
 
-    public void deleteHashtag(String hashtagName) {
-        Hashtag hashtag = hashtagRepository.getByName(hashtagName);
+    public void deleteHashtag(int id) {
+        Optional<Hashtag> hashtagOptional = hashtagRepository.findById(id);
+        if (!hashtagOptional.isPresent())
+            throw (new EntityNotFoundException("Could not retrieve hashtag"));
+        Hashtag hashtag = hashtagOptional.get();
         List<Photo> photos = new ArrayList<>();
         for (Photo photo : hashtag.getPhotos()) {
             photo.setHashtag(null);
             photos.add(photo);
         }
-        hashtagRepository.deleteByName(hashtagName);
+        hashtagRepository.deleteById(id);
         photoService.updatePhotos(photos);
 
     }
 
-    public Hashtag getHashtag(String hashtagName) {
-        return hashtagRepository.getByName(hashtagName);
+    public Hashtag getHashtag(int id) {
+
+        Optional<Hashtag> hashtagOptional = hashtagRepository.findById(id);
+        if (hashtagOptional.isPresent())
+            return hashtagOptional.get();
+        else throw (new EntityNotFoundException("Could not retrieve hashtag"));
+
+    }
+
+    public Hashtag getHashtagByName(String hashtagName) {
+        Optional<Hashtag> hashtagOptional = hashtagRepository.getByName(hashtagName);
+        if (hashtagOptional.isPresent())
+            return hashtagOptional.get();
+        else throw (new EntityNotFoundException("Could not retrieve hashtag"));
 
     }
 
@@ -69,14 +86,14 @@ public class HashtagService {
         else hashtagRepository.delete(hashtag);
     }
 
-    public void updateHashtagDescription(String hashtagName, String description) {
-        Hashtag hashtag = hashtagRepository.getByName(hashtagName);
+    public void updateHashtagDescription(int id , String description) {
+        Hashtag hashtag = getHashtag(id);
         hashtag.setDescription(description);
         hashtagRepository.save(hashtag);
     }
 
-    public HashtagDTO getHashtagDTO(String hashtagName) {
-        Hashtag hashtag = getHashtag(hashtagName);
+    public HashtagDTO getHashtagDTO(int id) {
+        Hashtag hashtag = getHashtag(id);
         ModelMapper modelMapper = new ModelMapper();
         HashtagDTO hashtagDTO = new HashtagDTO();
 

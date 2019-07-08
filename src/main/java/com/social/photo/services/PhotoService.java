@@ -40,13 +40,15 @@ public class PhotoService {
     public boolean addPhoto(MultipartFile photoFile, String photoName, String hashtag, int userId) throws HttpMediaTypeNotSupportedException {
 
         Photo photo = new Photo();
-        photo.setName(photoName);
+        if (!photoName.equals(""))
+            photo.setName(photoName);
 
-        if (!moveAndRenamePhoto(photoFile, photo.getName(), photo.getSystemName())) {
+        if (!moveAndRenamePhoto(photoFile, photo.getSystemName())) {
             throw (new HttpMediaTypeNotSupportedException("Unable to save file to internal directory"));
         }
         photo = setPhotoInfo(photo, photoFilePath, photo.getSystemName(), userId);
-        photo.setHashtag(hashtagService.addHashtag(hashtag));
+        if (!hashtag.equals(""))
+            photo.setHashtag(hashtagService.addHashtag(hashtag));
         log.info("Saving image...");
         photoRepository.save(photo);
         return true;
@@ -54,21 +56,23 @@ public class PhotoService {
 
     public boolean addPhotoToGroup(MultipartFile photoFile, String photoName, String hashtag, int userId, int groupId) throws HttpMediaTypeNotSupportedException {
         Photo photo = new Photo();
-        photo.setName(photoName);
+        if (!photoName.equals(""))
+            photo.setName(photoName);
 
         if (userIsInGroup(userId, groupId)) {
-            if (!moveAndRenamePhoto(photoFile, photo.getName(), photo.getSystemName()))
+            if (!moveAndRenamePhoto(photoFile, photo.getSystemName()))
                 throw (new HttpMediaTypeNotSupportedException("Unable to save file to internal directory"));
             photo = setPhotoInfo(photo, photoFilePath, photo.getName(), userId);
             photo.setGroupId(groupId);
-            photo.setHashtag(hashtagService.addHashtag(hashtag));
+            if (!hashtag.equals(""))
+                photo.setHashtag(hashtagService.addHashtag(hashtag));
             log.info("Saving image...");
             photoRepository.save(photo);
             return true;
         } else return false;
     }
 
-    private boolean moveAndRenamePhoto(MultipartFile photoFile, String oldName, String newName) {
+    private boolean moveAndRenamePhoto(MultipartFile photoFile, String newName) {
 
         try {
             Files.copy(photoFile.getInputStream(), Paths.get(photoFilePath + "/" + newName),
@@ -89,7 +93,7 @@ public class PhotoService {
         if (!hashtagService.hashtagExists(hashtagName)) {
             hashtagService.addHashtag(hashtagName);
         }
-        Hashtag hashtag = hashtagService.getHashtag(hashtagName);
+        Hashtag hashtag = hashtagService.getHashtagByName(hashtagName);
         List<Photo> photos = hashtag.getPhotos();
         photo.setHashtag(hashtag);
         photos.add(photo);
@@ -118,10 +122,9 @@ public class PhotoService {
         } else throw (new IllegalAccessException("Not authorized to perform this action"));
     }
 
-    public List<PhotoDTO> getPhotosByHashtag(String hashtagName) {
-        List<Photo> photos = photoRepository.findAllByHashtagId(hashtagService.getHashtag(hashtagName).getId());
+    public List<PhotoDTO> getPhotosByHashtag(int hashtagId) {
+        List<Photo> photos = photoRepository.findAllByHashtagId(hashtagId);
         List<PhotoDTO> photoDTOS = new ArrayList<>();
-
 
         for (Photo photo : photos) {
             PhotoDTO photoDTO = new PhotoDTO();

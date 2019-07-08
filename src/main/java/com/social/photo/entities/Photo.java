@@ -16,7 +16,7 @@ public class Photo {
     @Column(name = "photo_id")
     private int id;
 
-    private String name;
+    private String name = "default";
 
     @Column(name = "photo_path")
     private String photoPath;
