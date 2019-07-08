@@ -20,6 +20,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import javax.persistence.EntityNotFoundException;
+import java.io.InvalidClassException;
 
 //github repository: https://github.com/brunocleite/spring-boot-exception-handling
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -127,13 +128,13 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
      * @param request WebRequest
      * @return the ApiError object
      */
-    @Override
-    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
-        ServletWebRequest servletWebRequest = (ServletWebRequest) request;
-        log.info("{} to {}", servletWebRequest.getHttpMethod(), servletWebRequest.getRequest().getServletPath());
-        String error = "Malformed JSON request";
-        return buildResponseEntity(new ApiError(HttpStatus.BAD_REQUEST, error, ex));
-    }
+//    @Override
+//    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+//        ServletWebRequest servletWebRequest = (ServletWebRequest) request;
+//        log.info("{} to {}", servletWebRequest.getHttpMethod(), servletWebRequest.getRequest().getServletPath());
+//        String error = "Malformed JSON request";
+//        return buildResponseEntity(new ApiError(HttpStatus.BAD_REQUEST, error, ex));
+//    }
 
     /**
      * Handle HttpMessageNotWritableException.
@@ -184,9 +185,17 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(IllegalAccessException.class)
-    protected ResponseEntity<Object> handleIllegalAccessException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+    protected ResponseEntity<Object> handleIllegalAccess(NoHandlerFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
         ApiError apiError = new ApiError(HttpStatus.FORBIDDEN);
         apiError.setMessage("Authorization error");
+        apiError.setDebugMessage(ex.getMessage());
+        return buildResponseEntity(apiError);
+    }
+
+    @ExceptionHandler(InvalidClassException.class)
+    protected ResponseEntity<Object> handleInvalidClass(NoHandlerFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        ApiError apiError = new ApiError(HttpStatus.NOT_ACCEPTABLE);
+        apiError.setMessage("Invalid request object");
         apiError.setDebugMessage(ex.getMessage());
         return buildResponseEntity(apiError);
     }

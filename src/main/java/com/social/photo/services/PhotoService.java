@@ -11,13 +11,17 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.EntityNotFoundException;
+import java.io.InvalidClassException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -86,22 +90,34 @@ public class PhotoService {
         return true;
     }
 
-    public void addHashtagToPhoto(int photo_id, String hashtagName) {
+    public void addHashtagToPhoto(int photoId, PhotoDTO newPhoto) throws InvalidClassException {
 
-        Photo photo = photoRepository.findById(photo_id).get();
+        Optional<Photo> photoOptional = photoRepository.findById(photoId);
 
-        if (!hashtagService.hashtagExists(hashtagName)) {
-            hashtagService.addHashtag(hashtagName);
+        if (photoOptional.isPresent()) {
+            Photo photo = photoOptional.get();
+
+            if (!newPhoto.getHashtagName().equals(photo.getHashtag().getName()) && !newPhoto.getHashtagName().equals(null)) {
+                if (!hashtagService.hashtagExists(newPhoto.getHashtagName())) {
+                    hashtagService.addHashtag(newPhoto.getHashtagName());
+                }
+                Hashtag oldHashtag = hashtagService.getHashtagByName(photo.getHashtag().getName());
+                Hashtag newHashtag = hashtagService.getHashtagByName(newPhoto.getHashtagName());
+
+                List<Photo> photos = newHashtag.getPhotos();
+                photo.setHashtag(newHashtag);
+                photos.add(photo);
+                photoRepository.save(photo);
+                newHashtag.setPhotos(photos);
+                hashtagService.updateHashtag(newHashtag);
+                hashtagService.updateHashtag(oldHashtag);
+
+            } else {
+                throw (new InvalidClassException("Invalid hashtag object"));
+            }
+        }else{
+            throw (new EntityNotFoundException("Could not retrieve photo object"));
         }
-        Hashtag hashtag = hashtagService.getHashtagByName(hashtagName);
-        List<Photo> photos = hashtag.getPhotos();
-        photo.setHashtag(hashtag);
-        photos.add(photo);
-        photoRepository.save(photo);
-        hashtag.setPhotos(photos);
-        hashtagService.updateHashtag(hashtag);
-
-
     }
 
     public void updatePhotos(List<Photo> photos) {
@@ -184,7 +200,7 @@ public class PhotoService {
 
     }
 
-    private List<PhotoDTO> toPhotoDTOs(List<Photo> photos){
+    private List<PhotoDTO> toPhotoDTOs(List<Photo> photos) {
         List<PhotoDTO> photoDTOS = new ArrayList<>();
 
         for (Photo photo : photos) {

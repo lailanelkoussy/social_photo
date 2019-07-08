@@ -86,10 +86,12 @@ public class HashtagService {
         else hashtagRepository.delete(hashtag);
     }
 
-    public void updateHashtagDescription(int id, String description) {
+    public void updateHashtagDescription(int id, HashtagDTO hashtagDTO) {
         Hashtag hashtag = getHashtag(id);
-        hashtag.setDescription(description);
-        hashtagRepository.save(hashtag);
+        if (!hashtagDTO.getDescription().equals(null) && !hashtagDTO.getDescription().equals(hashtag.getDescription())) {
+            hashtag.setDescription(hashtagDTO.getDescription());
+            hashtagRepository.save(hashtag);
+        }
     }
 
     public HashtagDTO getHashtagDTO(int id) {

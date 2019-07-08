@@ -1,10 +1,10 @@
 package com.social.photo.controllers;
 
 import com.social.photo.dtos.PhotoDTO;
+import com.social.photo.entities.Hashtag;
+import com.social.photo.entities.Photo;
 import com.social.photo.services.PhotoService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,6 +13,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InvalidClassException;
 import java.util.List;
 
 @RestController
@@ -33,7 +34,7 @@ public class PhotoController {
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation(value = "Get photo using id", response = PhotoDTO.class)
     public PhotoDTO getPhoto(
-            @ApiParam(value = "Id of hashtag", required = true) @PathVariable int id) {
+            @ApiParam(value = "Id of photo", required = true) @PathVariable int id) {
         return photoService.getPhoto(id);
     }
 
@@ -81,12 +82,16 @@ public class PhotoController {
         return new ResponseEntity<>(photoService.deletePhoto(userId, photoId) ? HttpStatus.ACCEPTED : HttpStatus.FORBIDDEN);
     }
 
-    @PatchMapping(value = "/{id}/{hashtagName}")
+    @PatchMapping(value = "/{id}")
     @ApiOperation(value = "Add hashtag to photo")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully updated object"),
+            @ApiResponse(code = 404, message = "The resource you were trying to reach is not found"),
+    @ApiResponse(code = 406, message = "Invalid object")})
     public void addHashtagToPhoto(
             @ApiParam(value = "Id of photo", required = true) @PathVariable int id,
-            @ApiParam(value = "Name of hashtag to add to photo ", required = true) @PathVariable String hashtagName) {
-        photoService.addHashtagToPhoto(id, hashtagName);
+            @ApiParam(value = "Name of hashtag to add to photo ", required = true) @RequestBody PhotoDTO photo) throws InvalidClassException {
+        photoService.addHashtagToPhoto(id, photo);
     }
 
 }
