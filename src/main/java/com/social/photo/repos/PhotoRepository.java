@@ -10,4 +10,6 @@ public interface PhotoRepository extends JpaRepository<Photo,Integer> {
     List<Photo> findAllByHashtagId(int id);
 
     List<Photo> findAllByUserId(int userId);
+
+    List<Photo> findAllByGroupId(int groupId);
 }

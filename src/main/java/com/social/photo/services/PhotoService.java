@@ -124,16 +124,7 @@ public class PhotoService {
 
     public List<PhotoDTO> getPhotosByHashtag(int hashtagId) {
         List<Photo> photos = photoRepository.findAllByHashtagId(hashtagId);
-        List<PhotoDTO> photoDTOS = new ArrayList<>();
-
-        for (Photo photo : photos) {
-            PhotoDTO photoDTO = new PhotoDTO();
-            modelMapper.map(photo, photoDTO);
-            photoDTOS.add(photoDTO);
-        }
-
-        return photoDTOS;
-
+        return toPhotoDTOs(photos);
     }
 
     public PhotoDTO getPhoto(int id) {
@@ -142,6 +133,14 @@ public class PhotoService {
 
         modelMapper.map(photo, photoDTO);
         return photoDTO;
+
+    }
+
+    public List<PhotoDTO> getGroupsPhotos(int userId, int groupId) throws IllegalAccessException {
+        if (!userIsInGroup(userId, groupId))
+            throw (new IllegalAccessException("Not authorized to perform this action"));
+
+        return toPhotoDTOs(photoRepository.findAllByGroupId(groupId));
 
     }
 
@@ -175,14 +174,25 @@ public class PhotoService {
 
     private boolean userIsInGroup(int userId, int groupId) {
 
-        List<Integer> groupIds = groupServiceProxy.getUserGroupIds(userId);
-
-        for (int id : groupIds) {
-            if (id == groupId)
+        List<GroupDTO> groups = groupServiceProxy.getUserGroups(userId);
+        for (GroupDTO group : groups) {
+            if (group.getId() == groupId)
                 return true;
         }
         return false;
 
+
+    }
+
+    private List<PhotoDTO> toPhotoDTOs(List<Photo> photos){
+        List<PhotoDTO> photoDTOS = new ArrayList<>();
+
+        for (Photo photo : photos) {
+            PhotoDTO photoDTO = new PhotoDTO();
+            modelMapper.map(photo, photoDTO);
+            photoDTOS.add(photoDTO);
+        }
+        return photoDTOS;
 
     }
 

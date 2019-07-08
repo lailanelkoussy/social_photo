@@ -45,6 +45,14 @@ public class PhotoController {
         return photoService.getUsersPhotos(userId);
     }
 
+    @GetMapping(value = "/group/{userId}/{groupId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ApiOperation(value = "Get photos posted in the group", response = List.class)
+    public List<PhotoDTO> getGroupsPhotos(
+            @ApiParam(value = "Id of group", required = true) @PathVariable int groupId,
+            @ApiParam(value = "Id of user performing action", required = true) @PathVariable int userId) throws IllegalAccessException {
+        return photoService.getGroupsPhotos(userId, groupId);
+    }
+
     @PostMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ApiOperation(value = "Upload photo")
     public ResponseEntity<Object> addPhoto(

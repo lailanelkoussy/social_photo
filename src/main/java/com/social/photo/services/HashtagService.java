@@ -86,7 +86,7 @@ public class HashtagService {
         else hashtagRepository.delete(hashtag);
     }
 
-    public void updateHashtagDescription(int id , String description) {
+    public void updateHashtagDescription(int id, String description) {
         Hashtag hashtag = getHashtag(id);
         hashtag.setDescription(description);
         hashtagRepository.save(hashtag);
@@ -114,6 +114,5 @@ public class HashtagService {
 
         return hashtagDTOS;
     }
-
 
 }
