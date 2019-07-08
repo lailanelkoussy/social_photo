@@ -14,8 +14,8 @@ import java.util.List;
 public interface GroupServiceProxy {
 
     @GetMapping(value = "/user/{id}/", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<GroupDTO> getUserGroups(@PathVariable int id);
+    List<GroupDTO> getUserGroups(@PathVariable int id);
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public GroupDTO getGroup(@PathVariable int id);
+    GroupDTO getGroup(@PathVariable int id);
 }

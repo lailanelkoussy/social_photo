@@ -1,7 +1,6 @@
 package com.social.photo.controllers;
 
 import com.social.photo.dtos.PhotoDTO;
-import com.social.photo.entities.Photo;
 import com.social.photo.services.PhotoService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
