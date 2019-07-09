@@ -156,8 +156,12 @@ public class PhotoService {
         if (!userIsInGroup(userId, groupId))
             throw (new IllegalAccessException("Not authorized to perform this action"));
 
-        return toPhotoDTOs(photoRepository.findAllByGroupId(groupId));
+        return getGroupsPhotos(groupId);
 
+    }
+
+    public List<PhotoDTO> getGroupsPhotos(int groupId){
+        return toPhotoDTOs(photoRepository.findAllByGroupId(groupId));
     }
 
     public List<PhotoDTO> getUsersPhotos(int userId) {

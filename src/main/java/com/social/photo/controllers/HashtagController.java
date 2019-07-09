@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping(value = "/hashtags")
@@ -34,6 +35,16 @@ public class HashtagController {
     public HashtagDTO getHashtag(
             @ApiParam(value = "Id of hashtag", required = true) @PathVariable int hashtagId) {
         return hashtagService.getHashtagDTO(hashtagId);
+    }
+
+    @GetMapping(value = "/group/{groupId}")
+    @ApiOperation(value = "Get a group's associated hashtags")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully retrieved list"),
+            @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
+    public Set<String> getGroupsHashtags(
+            @ApiParam(value = "Id of group", required = true) @PathVariable int groupId) {
+        return hashtagService.getGroupsTags(groupId);
     }
 
     @PatchMapping(value = "/{hashtagId}")

@@ -1,6 +1,7 @@
 package com.social.photo.services;
 
 import com.social.photo.dtos.HashtagDTO;
+import com.social.photo.dtos.PhotoDTO;
 import com.social.photo.entities.Hashtag;
 import com.social.photo.entities.Photo;
 import com.social.photo.repos.HashtagRepository;
@@ -9,9 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class HashtagService {
@@ -21,6 +20,8 @@ public class HashtagService {
 
     @Autowired
     PhotoService photoService;
+
+    ModelMapper modelMapper = new ModelMapper();
 
     public Hashtag addHashtag(String hashtagName) {
 
@@ -36,9 +37,8 @@ public class HashtagService {
     public boolean addHashtag(HashtagDTO hashtagDTO) {
 
         if (!hashtagExists(hashtagDTO.getName())) {
-            ModelMapper modelMapper = new ModelMapper();
             Hashtag hashtag = new Hashtag();
-            modelMapper.map(hashtag, hashtag);
+            modelMapper.map(hashtagDTO, hashtag);
             hashtagRepository.save(hashtag);
             return true;
         } else return false;
@@ -96,7 +96,6 @@ public class HashtagService {
 
     public HashtagDTO getHashtagDTO(int id) {
         Hashtag hashtag = getHashtag(id);
-        ModelMapper modelMapper = new ModelMapper();
         HashtagDTO hashtagDTO = new HashtagDTO();
 
         modelMapper.map(hashtag, hashtagDTO);
@@ -105,16 +104,39 @@ public class HashtagService {
 
     public List<HashtagDTO> getAllHashtagDTOs() {
         List<Hashtag> hashtags = hashtagRepository.findAll();
-        ModelMapper modelMapper = new ModelMapper();
         List<HashtagDTO> hashtagDTOS = new ArrayList<>();
 
         for (Hashtag hashtag : hashtags) {
-            HashtagDTO hashtagDTO = new HashtagDTO();
-            modelMapper.map(hashtag, hashtagDTO);
-            hashtagDTOS.add(hashtagDTO);
+
+            hashtagDTOS.add(toHashtagDTO(hashtag));
         }
 
         return hashtagDTOS;
     }
+
+    public Set<String> getGroupsTags(int groupId) {
+        List<PhotoDTO> photoDTOS = photoService.getGroupsPhotos(groupId);
+        Set<String> hashtagNames = new HashSet<>();
+
+        for(PhotoDTO photoDTO : photoDTOS){
+            hashtagNames.add(photoDTO.getHashtagName());
+        }
+        return hashtagNames;
+
+    }
+
+    private HashtagDTO toHashtagDTO(Hashtag hashtag){
+        HashtagDTO hashtagDTO = new HashtagDTO();
+        modelMapper.map(hashtag, hashtagDTO);
+        return hashtagDTO;
+    }
+
+    private Hashtag toHashtag (HashtagDTO hashtagDTO){
+        Hashtag hashtag = new Hashtag();
+        modelMapper.map(hashtagDTO, hashtag);
+        return hashtag;
+    }
+
+
 
 }
