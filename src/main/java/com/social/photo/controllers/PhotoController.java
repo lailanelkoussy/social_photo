@@ -115,5 +115,4 @@ public class PhotoController {
             @ApiParam(value = "Name of hashtag to add to photo ", required = true) @RequestBody PhotoDTO photo) throws InvalidClassException {
         photoService.addHashtagToPhoto(id, photo);
     }
-
 }
