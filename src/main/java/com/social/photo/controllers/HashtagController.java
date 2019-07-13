@@ -19,13 +19,13 @@ public class HashtagController {
         return hashtagService.getAllHashtagDTOs();
     }
 
-    @GetMapping(value = "/{hashtagName}")
+    @GetMapping(value = "/{hashtagName}") //todo this should be by id not name
     public HashtagDTO getHashtag(@PathVariable String hashtagName){
         return hashtagService.getHashtagDTO(hashtagName);
     }
 
-    @PatchMapping(value = "/{hashtagName}")
-    public void updateHashtagDescription(@PathVariable String hashtagName, @RequestBody String description){
+    @PatchMapping(value = "/{hashtagName}") //todo using id also
+    public void updateHashtagDescription(@PathVariable String hashtagName, @RequestBody String description){ //todo wrong, all should be in the body
         hashtagService.updateHashtagDescription(hashtagName, description);
     }
 

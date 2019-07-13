@@ -29,7 +29,7 @@ public class PhotoService {
     HashtagService hashtagService;
 
     ModelMapper modelMapper = new ModelMapper();
-
+    //todo: you shouldn't use an explicit one like this that points to your project, it should be read from the yml settings file
     private final String photoFilePath ="/Users/macbookpro/Documents/University/Internship/Social Media/photo/src/main/resources/images";
 
     public boolean addPhoto(MultipartFile photoFile, String photoName, String hashtag) {
@@ -62,10 +62,11 @@ public class PhotoService {
         return true;
     }
 
-    public void addHashtagToPhoto(int photo_id, String hashtagName) {
+    public void addHashtagToPhoto(int photo_id, String hashtagName) {//todo should be photoId
 
         Photo photo = photoRepository.findById(photo_id).get();
-
+        //todo well, this is not a good idea, you are doing too much operations
+        //todo you can just set the hash tag to a photo and save it, instead of loading all the photos and updating the list
         if (!hashtagService.hashtagExists(hashtagName)) {
             hashtagService.addHashtag(hashtagName);
         }
@@ -84,10 +85,10 @@ public class PhotoService {
         photoRepository.saveAll(photos);
     }
 
-    public void deletePhoto(int photo_id) {
+    public void deletePhoto(int photo_id) {//todo should be photoId
         Photo photo = (photoRepository.findById(photo_id)).get();
         Hashtag hashtag = photo.getHashtag();
-
+        //todo the same as above
         List<Photo> photos = hashtag.getPhotos();
         photos.remove(photo);
         hashtag.setPhotos(photos);

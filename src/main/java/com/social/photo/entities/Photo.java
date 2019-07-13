@@ -29,6 +29,6 @@ public class Photo {
 
     public String getSystemName() {
         return name + " " + timeStamp.getTime() + ".jpg";
-    }
+    } //todo spaces can cause a problem later, prefer using '_' or '-' in the name instead
 
 }

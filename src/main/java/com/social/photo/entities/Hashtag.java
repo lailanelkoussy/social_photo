@@ -7,8 +7,8 @@ import java.util.List;
 
 @Entity
 @Data
-@Table(name = "hashtag")
-public class Hashtag {
+@Table(name = "hashtag")//todo this is a typo
+public class Hashtag { //todo this is a typo
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

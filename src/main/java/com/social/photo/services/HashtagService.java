@@ -63,7 +63,7 @@ public class HashtagService {
         return (hashtagRepository.countByName(hashtagName) != 0);
     }
 
-    public void updateHashtag(Hashtag hashtag) {
+    public void updateHashtag(Hashtag hashtag) { //todo the name of the function is not descriptive
         if (hashtag.getPhotos().size() != 0)
             hashtagRepository.save(hashtag);
         else hashtagRepository.delete(hashtag);
@@ -75,7 +75,7 @@ public class HashtagService {
         hashtagRepository.save(hashtag);
     }
 
-    public HashtagDTO getHashtagDTO(String hashtagName) {
+    public HashtagDTO getHashtagDTO(String hashtagName) {//todo you shouldn't name a function here as DTO!
         Hashtag hashtag = getHashtag(hashtagName);
         ModelMapper modelMapper = new ModelMapper();
         HashtagDTO hashtagDTO = new HashtagDTO();

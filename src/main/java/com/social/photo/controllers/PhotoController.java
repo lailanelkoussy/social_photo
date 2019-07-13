@@ -13,12 +13,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/photos")
-public class PhotoController {
+public class PhotoController { //todo where is swagger????
 
     @Autowired
     private PhotoService photoService;
 
-    @GetMapping(value = "/hashtag/{hashtagName}")
+    @GetMapping(value = "/hashtag/{hashtagName}")//todo should be /all/hashtag/{id}
     public List<PhotoDTO> getPhotosByHashtag(@PathVariable String hashtagName){
         return photoService.getPhotosByHashtag(hashtagName);
     }
@@ -38,7 +38,7 @@ public class PhotoController {
         photoService.deletePhoto(id);
     }
 
-    @PatchMapping(value = "/{id}/{hashtagName}")
+    @PatchMapping(value = "/{id}/{hashtagName}")//todo, mm, no, not like this :(
     public void addHashtagToPhoto(@PathVariable int id, @PathVariable String hashtagName) {
         photoService.addHashtagToPhoto(id, hashtagName);
     }
