@@ -11,7 +11,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityNotFoundException;
@@ -50,7 +49,7 @@ public class PhotoService {
         if (!moveAndRenamePhoto(photoFile, photo.getSystemName())) {
             throw (new HttpMediaTypeNotSupportedException("Unable to save file to internal directory"));
         }
-        photo = setPhotoInfo(photo, photoFilePath, photo.getSystemName(), userId);
+        photo = setPhotoInfo(photo, photoFilePath, userId);
         if (!hashtag.equals(""))
             photo.setHashtag(hashtagService.addHashtag(hashtag));
         log.info("Saving image...");
@@ -66,7 +65,7 @@ public class PhotoService {
         if (userIsInGroup(userId, groupId)) {
             if (!moveAndRenamePhoto(photoFile, photo.getSystemName()))
                 throw (new HttpMediaTypeNotSupportedException("Unable to save file to internal directory"));
-            photo = setPhotoInfo(photo, photoFilePath, photo.getName(), userId);
+            photo = setPhotoInfo(photo, photoFilePath, userId);
             photo.setGroupId(groupId);
             if (!hashtag.equals(""))
                 photo.setHashtag(hashtagService.addHashtag(hashtag));
@@ -81,6 +80,7 @@ public class PhotoService {
         try {
             Files.copy(photoFile.getInputStream(), Paths.get(photoFilePath + "/" + newName),
                     StandardCopyOption.REPLACE_EXISTING);
+            log.info("Saving file to internal directory...");
 
         } catch (java.io.IOException e) {
             log.error("Unable to save file to internal directory.");
@@ -106,66 +106,87 @@ public class PhotoService {
 
                 List<Photo> photos = newHashtag.getPhotos();
                 photo.setHashtag(newHashtag);
+                log.info("Adding hashtag to photo...");
                 photos.add(photo);
                 photoRepository.save(photo);
                 newHashtag.setPhotos(photos);
                 hashtagService.updateHashtag(newHashtag);
                 hashtagService.updateHashtag(oldHashtag);
+                log.info("Updating hashtags in database...");
 
             } else {
                 throw (new InvalidClassException("Invalid hashtag object"));
             }
-        }else{
+        } else {
             throw (new EntityNotFoundException("Could not retrieve photo object"));
         }
     }
 
     public void updatePhotos(List<Photo> photos) {
+        log.info("Updating photos...");
         photoRepository.saveAll(photos);
     }
 
     public boolean deletePhoto(int photo_id, int userId) throws IllegalAccessException {
-        Photo photo = (photoRepository.findById(photo_id)).get();
-        Hashtag hashtag = photo.getHashtag();
+        Optional<Photo> photoOptional = photoRepository.findById(photo_id);
+        if (photoOptional.isPresent()) {
 
-        if (isOwnerOrGroupCreator(photo, userId)) {
-            List<Photo> photos = hashtag.getPhotos();
-            photos.remove(photo);
-            hashtag.setPhotos(photos);
-            photoRepository.deleteById(photo_id);
-            hashtagService.updateHashtag(hashtag);
-            return true;
-        } else throw (new IllegalAccessException("Not authorized to perform this action"));
+            Photo photo = (photoOptional).get();
+            Hashtag hashtag = photo.getHashtag();
+            log.info("Checking for user credentials...");
+            if (isOwnerOrGroupCreator(photo, userId)) {
+                log.info("User is allowed to delete photo...");
+                List<Photo> photos = hashtag.getPhotos();
+                photos.remove(photo);
+                hashtag.setPhotos(photos);
+                photoRepository.deleteById(photo_id);
+                hashtagService.updateHashtag(hashtag);
+                log.info("Deleted photo");
+                return true;
+            } else {
+                throw (new IllegalAccessException("Not authorized to perform this action"));
+            }
+        } else throw (new EntityNotFoundException("Could not find photo"));
     }
 
     public List<PhotoDTO> getPhotosByHashtag(int hashtagId) {
+        log.info("Searching for photos");
         List<Photo> photos = photoRepository.findAllByHashtagId(hashtagId);
         return toPhotoDTOs(photos);
     }
 
     public PhotoDTO getPhoto(int id) {
-        Photo photo = (photoRepository.findById(id)).get();
-        PhotoDTO photoDTO = new PhotoDTO();
 
-        modelMapper.map(photo, photoDTO);
-        return photoDTO;
+        Optional<Photo> photoOptional = photoRepository.findById(id);
+        log.info("Looking for photo");
+
+        if (photoOptional.isPresent()) {
+            log.info("Photo found");
+            Photo photo = (photoOptional).get();
+            PhotoDTO photoDTO = new PhotoDTO();
+            modelMapper.map(photo, photoDTO);
+            return photoDTO;
+        } else throw (new EntityNotFoundException("Could not find photo"));
 
     }
 
     public List<PhotoDTO> getGroupsPhotos(int userId, int groupId) throws IllegalAccessException {
-        if (!userIsInGroup(userId, groupId))
+        if (!userIsInGroup(userId, groupId)) {
+            log.error("Not authorized to perform this action");
             throw (new IllegalAccessException("Not authorized to perform this action"));
+        }
 
+        log.info("Retrieving photos... ");
         return getGroupsPhotos(groupId);
-
     }
 
-    public List<PhotoDTO> getGroupsPhotos(int groupId){
+    public List<PhotoDTO> getGroupsPhotos(int groupId) {
         return toPhotoDTOs(photoRepository.findAllByGroupId(groupId));
     }
 
     public List<PhotoDTO> getUsersPhotos(int userId) {
         List<PhotoDTO> photoDTOS = new ArrayList<>();
+        log.info("Retrieving photos...");
         List<Photo> photos = photoRepository.findAllByUserId(userId);
 
         for (Photo photo : photos) {
@@ -176,7 +197,8 @@ public class PhotoService {
         return photoDTOS;
     }
 
-    public Photo setPhotoInfo(Photo photo, String photoFilePath, String name, int userId) {
+    public Photo setPhotoInfo(Photo photo, String photoFilePath, int userId) {
+        log.info("Setting photo information");
         photo.setPhotoPath(photoFilePath);
         photo.setName(photo.getSystemName());
         photo.setUserId(userId);

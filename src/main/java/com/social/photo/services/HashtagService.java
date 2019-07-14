@@ -5,6 +5,7 @@ import com.social.photo.dtos.PhotoDTO;
 import com.social.photo.entities.Hashtag;
 import com.social.photo.entities.Photo;
 import com.social.photo.repos.HashtagRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import javax.persistence.EntityNotFoundException;
 import java.util.*;
 
+@Slf4j
 @Service
 public class HashtagService {
 
@@ -28,44 +30,25 @@ public class HashtagService {
         if (!hashtagExists(hashtagName)) {
             Hashtag hashtag = new Hashtag();
             hashtag.setName(hashtagName);
+            log.info("Creating new hashtag");
             return hashtagRepository.save(hashtag);
 
         } else return hashtagRepository.getByName(hashtagName).get();
 
     }
 
-    public boolean addHashtag(HashtagDTO hashtagDTO) {
-
-        if (!hashtagExists(hashtagDTO.getName())) {
-            Hashtag hashtag = new Hashtag();
-            modelMapper.map(hashtagDTO, hashtag);
-            hashtagRepository.save(hashtag);
-            return true;
-        } else return false;
-    }
-
-    public void deleteHashtag(int id) {
-        Optional<Hashtag> hashtagOptional = hashtagRepository.findById(id);
-        if (!hashtagOptional.isPresent())
-            throw (new EntityNotFoundException("Could not retrieve hashtag"));
-        Hashtag hashtag = hashtagOptional.get();
-        List<Photo> photos = new ArrayList<>();
-        for (Photo photo : hashtag.getPhotos()) {
-            photo.setHashtag(null);
-            photos.add(photo);
-        }
-        hashtagRepository.deleteById(id);
-        photoService.updatePhotos(photos);
-
-    }
-
     public Hashtag getHashtag(int id) {
 
+        log.info("Retrieving hashtag");
         Optional<Hashtag> hashtagOptional = hashtagRepository.findById(id);
-        if (hashtagOptional.isPresent())
+        if (hashtagOptional.isPresent()) {
+            log.info("Hashtag found");
             return hashtagOptional.get();
-        else throw (new EntityNotFoundException("Could not retrieve hashtag"));
+        } else {
+            log.error("Could not retrieve hashtag");
+            throw (new EntityNotFoundException("Could not retrieve hashtag"));
 
+        }
     }
 
     public Hashtag getHashtagByName(String hashtagName) {
@@ -83,12 +66,16 @@ public class HashtagService {
     public void updateHashtag(Hashtag hashtag) {
         if (hashtag.getPhotos().size() != 0)
             hashtagRepository.save(hashtag);
-        else hashtagRepository.delete(hashtag);
+        else {
+            log.info("Deleting hashtag");
+            hashtagRepository.delete(hashtag);
+        }
     }
 
     public void updateHashtagDescription(int id, HashtagDTO hashtagDTO) {
         Hashtag hashtag = getHashtag(id);
         if (!hashtagDTO.getDescription().equals(null) && !hashtagDTO.getDescription().equals(hashtag.getDescription())) {
+            log.info("Updating hashtag description");
             hashtag.setDescription(hashtagDTO.getDescription());
             hashtagRepository.save(hashtag);
         }
@@ -103,6 +90,7 @@ public class HashtagService {
     }
 
     public List<HashtagDTO> getAllHashtagDTOs() {
+        log.info("Retrieving all hashtags");
         List<Hashtag> hashtags = hashtagRepository.findAll();
         List<HashtagDTO> hashtagDTOS = new ArrayList<>();
 
@@ -115,27 +103,23 @@ public class HashtagService {
     }
 
     public Set<String> getGroupsTags(int groupId) {
+        log.info("Retrieving hashtags");
         List<PhotoDTO> photoDTOS = photoService.getGroupsPhotos(groupId);
         Set<String> hashtagNames = new HashSet<>();
 
-        for(PhotoDTO photoDTO : photoDTOS){
+        for (PhotoDTO photoDTO : photoDTOS) {
             hashtagNames.add(photoDTO.getHashtagName());
         }
         return hashtagNames;
 
     }
 
-    private HashtagDTO toHashtagDTO(Hashtag hashtag){
+    private HashtagDTO toHashtagDTO(Hashtag hashtag) {
         HashtagDTO hashtagDTO = new HashtagDTO();
         modelMapper.map(hashtag, hashtagDTO);
         return hashtagDTO;
     }
 
-    private Hashtag toHashtag (HashtagDTO hashtagDTO){
-        Hashtag hashtag = new Hashtag();
-        modelMapper.map(hashtagDTO, hashtag);
-        return hashtag;
-    }
 
 
 
