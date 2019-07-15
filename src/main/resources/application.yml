@@ -14,3 +14,11 @@ spring:
     database-platform: org.hibernate.dialect.MySQL57Dialect
     generate-ddl: true
     show-sql: true
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: basic

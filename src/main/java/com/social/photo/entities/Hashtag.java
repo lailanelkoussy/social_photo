@@ -1,5 +1,6 @@
 package com.social.photo.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -17,6 +18,7 @@ public class Hashtag { //todo this is a typo
 
     String name;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "hashtag")
     List<Photo> photos;
 

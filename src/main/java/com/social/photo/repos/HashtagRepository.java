@@ -3,11 +3,13 @@ package com.social.photo.repos;
 import com.social.photo.entities.Hashtag;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface HashtagRepository extends JpaRepository<Hashtag, Integer> {
+import java.util.Optional;
+
+public interface HashtagRepository extends JpaRepository<Hashtag, Integer> {//todo please update that 'name', we don't need it
 
     long countByName(String name);
 
     void deleteByName(String name);
 
-    Hashtag getByName(String name);
+    Optional<Hashtag> getByName(String name);
 }
