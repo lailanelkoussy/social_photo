@@ -6,8 +6,8 @@ CREATE TABLE photo
     name       varchar(255) NOT NULL,
     photo_path varchar(510) NOT NULL,
     time_stamp datetime(6),
-    hashtag_id int(11), --todo this should be hash_tag_id, this is a typo
+    hash_tag_id int(11),
 
     PRIMARY KEY (photo_id),
-    FOREIGN KEY (hashtag_id) REFERENCES hashtag (hashtag_id)
+    FOREIGN KEY (hash_tag_id) REFERENCES hashtag (hash_tag_id)
 );

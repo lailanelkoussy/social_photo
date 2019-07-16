@@ -2,18 +2,23 @@ package com.social.photo.services;
 
 import com.social.photo.dtos.GroupDTO;
 import com.social.photo.dtos.PhotoDTO;
-import com.social.photo.entities.Hashtag;
+import com.social.photo.entities.HashTag;
 import com.social.photo.entities.Photo;
 import com.social.photo.proxies.GroupServiceProxy;
 import com.social.photo.repos.PhotoRepository;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityNotFoundException;
+import java.io.File;
 import java.io.InvalidClassException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -25,20 +30,23 @@ import java.util.Optional;
 
 @Service
 @Slf4j
+@Getter
+@Setter
+@ConfigurationProperties(prefix = "photo")
 public class PhotoService {
 
     @Autowired
     PhotoRepository photoRepository;
 
     @Autowired
-    HashtagService hashtagService;
+    HashTagService hashtagService;
 
     @Autowired
     GroupServiceProxy groupServiceProxy;
 
     ModelMapper modelMapper = new ModelMapper();
-    //todo: you shouldn't use an explicit one like this that points to your project, it should be read from the yml settings file
-    private final String photoFilePath ="/Users/macbookpro/Documents/University/Internship/Social Media/photo/src/main/resources/images";
+
+    private String filePath;
 
     public boolean addPhoto(MultipartFile photoFile, String photoName, String hashtag, int userId) throws HttpMediaTypeNotSupportedException {
 
@@ -46,29 +54,33 @@ public class PhotoService {
         if (!photoName.equals(""))
             photo.setName(photoName);
 
-        if (!moveAndRenamePhoto(photoFile, photo.getSystemName())) {
+
+        if (!moveAndRenamePhoto(photoFile, photo.getSystemName(FilenameUtils.getExtension(photoFile.getOriginalFilename())))) {
             throw (new HttpMediaTypeNotSupportedException("Unable to save file to internal directory"));
         }
-        photo = setPhotoInfo(photo, photoFilePath, userId);
+        photo = setPhotoInfo(photo, filePath, userId);
         if (!hashtag.equals(""))
-            photo.setHashtag(hashtagService.addHashtag(hashtag));
+            photo.setHashtag(hashtagService.addHashTag(hashtag));
         log.info("Saving image...");
         photoRepository.save(photo);
         return true;
     }
+
 
     public boolean addPhotoToGroup(MultipartFile photoFile, String photoName, String hashtag, int userId, int groupId) throws HttpMediaTypeNotSupportedException {
         Photo photo = new Photo();
         if (!photoName.equals(""))
             photo.setName(photoName);
 
+
         if (userIsInGroup(userId, groupId)) {
-            if (!moveAndRenamePhoto(photoFile, photo.getSystemName()))
+            if (!moveAndRenamePhoto(photoFile, photo.getSystemName(FilenameUtils.getExtension(photoFile.getOriginalFilename()))))
                 throw (new HttpMediaTypeNotSupportedException("Unable to save file to internal directory"));
-            photo = setPhotoInfo(photo, photoFilePath, userId);
+
+            photo = setPhotoInfo(photo, filePath, userId);
             photo.setGroupId(groupId);
             if (!hashtag.equals(""))
-                photo.setHashtag(hashtagService.addHashtag(hashtag));
+                photo.setHashtag(hashtagService.addHashTag(hashtag));
             log.info("Saving image...");
             photoRepository.save(photo);
             return true;
@@ -78,7 +90,7 @@ public class PhotoService {
     private boolean moveAndRenamePhoto(MultipartFile photoFile, String newName) {
 
         try {
-            Files.copy(photoFile.getInputStream(), Paths.get(photoFilePath + "/" + newName),
+            Files.copy(photoFile.getInputStream(), Paths.get(filePath + "/" + newName),
                     StandardCopyOption.REPLACE_EXISTING);
             log.info("Saving file to internal directory...");
 
@@ -90,11 +102,7 @@ public class PhotoService {
         return true;
     }
 
-
-        //todo well, this is not a good idea, you are doing too much operations
-        //todo you can just set the hash tag to a photo and save it, instead of loading all the photos and updating the list
-
-    public void addHashtagToPhoto(int photoId, PhotoDTO newPhoto) throws InvalidClassException {
+    public void addHashTagToPhoto(int photoId, PhotoDTO newPhoto) throws InvalidClassException {
 
         Optional<Photo> photoOptional = photoRepository.findById(photoId);
 
@@ -102,20 +110,16 @@ public class PhotoService {
             Photo photo = photoOptional.get();
 
             if (!newPhoto.getHashtagName().equals(photo.getHashtag().getName()) && !newPhoto.getHashtagName().equals(null)) {
-                if (!hashtagService.hashtagExists(newPhoto.getHashtagName())) {
-                    hashtagService.addHashtag(newPhoto.getHashtagName());
+                if (!hashtagService.hashTagExists(newPhoto.getHashtagName())) {
+                    hashtagService.addHashTag(newPhoto.getHashtagName());
                 }
-                Hashtag oldHashtag = hashtagService.getHashtagByName(photo.getHashtag().getName());
-                Hashtag newHashtag = hashtagService.getHashtagByName(newPhoto.getHashtagName());
+                HashTag oldHashtag = hashtagService.getHashTagByName(photo.getHashtag().getName());
+                HashTag newHashtag = hashtagService.getHashTagByName(newPhoto.getHashtagName());
 
-                List<Photo> photos = newHashtag.getPhotos();
                 photo.setHashtag(newHashtag);
                 log.info("Adding hashtag to photo...");
-                photos.add(photo);
                 photoRepository.save(photo);
-                newHashtag.setPhotos(photos);
-                hashtagService.updateHashtag(newHashtag);
-                hashtagService.updateHashtag(oldHashtag);
+                hashtagService.updateHashTag(oldHashtag);
                 log.info("Updating hashtags in database...");
 
             } else {
@@ -134,9 +138,8 @@ public class PhotoService {
     public boolean deletePhoto(int photo_id, int userId) throws IllegalAccessException {
         Optional<Photo> photoOptional = photoRepository.findById(photo_id);
         if (photoOptional.isPresent()) {
-
             Photo photo = (photoOptional).get();
-            Hashtag hashtag = photo.getHashtag();
+            HashTag hashtag = photo.getHashtag();
             log.info("Checking for user credentials...");
             if (isOwnerOrGroupCreator(photo, userId)) {
                 log.info("User is allowed to delete photo...");
@@ -144,8 +147,10 @@ public class PhotoService {
                 photos.remove(photo);
                 hashtag.setPhotos(photos);
                 photoRepository.deleteById(photo_id);
-                hashtagService.updateHashtag(hashtag);
-                log.info("Deleted photo");
+                hashtagService.updateHashTag(hashtag);
+                File file = new File(photo.getPhotoPath() + photo.getName());
+                if (file.delete())
+                    log.info("Deleted photo successfully");
                 return true;
             } else {
                 throw (new IllegalAccessException("Not authorized to perform this action"));
@@ -203,7 +208,6 @@ public class PhotoService {
     public Photo setPhotoInfo(Photo photo, String photoFilePath, int userId) {
         log.info("Setting photo information");
         photo.setPhotoPath(photoFilePath);
-        photo.setName(photo.getSystemName());
         photo.setUserId(userId);
         return photo;
     }

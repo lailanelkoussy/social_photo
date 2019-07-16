@@ -3,7 +3,7 @@ package com.social.photo.dtos;
 import lombok.Data;
 
 @Data
-public class HashtagDTO { //todo HashTag
+public class HashTagDTO {
     String name;
 
     String description;

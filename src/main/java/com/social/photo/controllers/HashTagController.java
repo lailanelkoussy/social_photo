@@ -1,7 +1,7 @@
 package com.social.photo.controllers;
 
-import com.social.photo.dtos.HashtagDTO;
-import com.social.photo.services.HashtagService;
+import com.social.photo.dtos.HashTagDTO;
+import com.social.photo.services.HashTagService;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -12,50 +12,50 @@ import java.util.Set;
 
 @RestController
 @RequestMapping(value = "/hashtags")
-@Api(value = "Hashtag Management Service")
-public class HashtagController {
+@Api(value = "HashTag Management Service")
+public class HashTagController {
 
     @Autowired
-    HashtagService hashtagService;
+    HashTagService hashtagService;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation(value = "Get all hashtags", response = List.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully retrieved list"),
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
-    public List<HashtagDTO> getAllHashtagDTOs() {
-        return hashtagService.getAllHashtagDTOs();
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<HashTagDTO> getAllHashtagDTOs() {
+        return hashtagService.getAllHashTagDTOs();
     }
 
-    @GetMapping(value = "/{hashtagId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Get hashtag by id", response = HashtagDTO.class)
+    @ApiOperation(value = "Get hashtag by id", response = HashTagDTO.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully retrieved object"),
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
-    public HashtagDTO getHashtag(
+    @GetMapping(value = "/{hashtagId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public HashTagDTO getHashtag(
             @ApiParam(value = "Id of hashtag", required = true) @PathVariable int hashtagId) {
-        return hashtagService.getHashtagDTO(hashtagId);
+        return hashtagService.getHashTagDTO(hashtagId);
     }
 
-    @GetMapping(value = "/group/{groupId}")//todo hashtag/all/....
-    @ApiOperation(value = "Get a group's associated hashtags")
+    @ApiOperation(value = "Get a group's associated hash tag")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully retrieved list"),
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
+    @GetMapping(value = "/group/{groupId}")
     public Set<String> getGroupsHashtags(
             @ApiParam(value = "Id of group", required = true) @PathVariable int groupId) {
         return hashtagService.getGroupsTags(groupId);
     }
 
-    @PatchMapping(value = "/{hashtagId}")
-    @ApiOperation(value = "Update hashtag description")
+    @ApiOperation(value = "Update hash tag description")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully updated object"),
             @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
+    @PatchMapping(value = "/{hashtagId}")
     public void updateHashtagDescription(
             @ApiParam(value = "Id of hashtag", required = true) @PathVariable int hashtagId,
-            @ApiParam(value = "Hashtag object with new description", required = true) @RequestBody HashtagDTO hashtagDTO) {
-        hashtagService.updateHashtagDescription(hashtagId, hashtagDTO);
+            @ApiParam(value = "HashTag object with new description", required = true) @RequestBody HashTagDTO hashtagDTO) {
+        hashtagService.updateHashTagDescription(hashtagId, hashtagDTO);
     }
 
 

@@ -4,7 +4,6 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Calendar;
 
 @Entity
 @Data
@@ -28,15 +27,16 @@ public class Photo {
     private int groupId;
 
     @ManyToOne
-    @JoinColumn(name = "hashtag_id")
-    private Hashtag hashtag;
+    @JoinColumn(name = "hash_tag_id")
+    private HashTag hashtag;
 
     @Column(name = "time_stamp")
     private LocalDateTime timeStamp = LocalDateTime.now();
 
-    public String getSystemName() {
 
-        return name + " " + timeStamp + ".jpg"; //todo how can you be sure that it's always jpg extension ??
+    public String getSystemName(String extension) {
+
+        return name + " " + timeStamp + "." + extension;
     }
 
 }

@@ -8,14 +8,15 @@ import java.util.List;
 
 @Entity
 @Data
-@Table(name = "hashtag")//todo this is a typo
-public class Hashtag { //todo this is a typo
+@Table(name = "hashtag")
+public class HashTag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "hashtag_id")
+    @Column(name = "hash_tag_id")
     int id;
 
+    @Column(nullable = false, unique = true)
     String name;
 
     @JsonIgnore

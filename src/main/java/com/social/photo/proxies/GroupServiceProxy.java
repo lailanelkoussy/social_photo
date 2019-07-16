@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
-@FeignClient(name = "GroupService", url = "http://localhost:8083") //todo please update that to match the other service controller
+@FeignClient(name = "GroupService", url = "http://localhost:8083")
 @RequestMapping(value = "/groups")
 public interface GroupServiceProxy {
 
-    @GetMapping(value = "/user/{id}/", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/user/{id}/")
     List<GroupDTO> getUserGroups(@PathVariable int id);
 
-    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/{id}")
     GroupDTO getGroup(@PathVariable int id);
 }
