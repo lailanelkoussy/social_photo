@@ -2,9 +2,12 @@ package com.social.photo.services;
 
 import com.social.photo.dtos.GroupDTO;
 import com.social.photo.dtos.PhotoDTO;
+import com.social.photo.dtos.PhotoPatchDTO;
+import com.social.photo.dtos.UserDTO;
 import com.social.photo.entities.HashTag;
 import com.social.photo.entities.Photo;
 import com.social.photo.proxies.GroupServiceProxy;
+import com.social.photo.proxies.UserServiceProxy;
 import com.social.photo.repos.PhotoRepository;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,6 +16,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,16 +49,18 @@ public class PhotoService {
     @Autowired
     GroupServiceProxy groupServiceProxy;
 
+    @Autowired
+    UserServiceProxy userServiceProxy;
+
     ModelMapper modelMapper = new ModelMapper();
 
     private String filePath;
 
-    public boolean addPhoto(MultipartFile photoFile, String photoName, String hashtag, int userId) throws HttpMediaTypeNotSupportedException {
+    public void addPhoto(MultipartFile photoFile, String photoName, String hashtag, int userId) throws HttpMediaTypeNotSupportedException {
 
         Photo photo = new Photo();
         if (!photoName.equals(""))
             photo.setName(photoName);
-
 
         if (!moveAndRenamePhoto(photoFile, photo.getSystemName(FilenameUtils.getExtension(photoFile.getOriginalFilename())))) {
             throw (new HttpMediaTypeNotSupportedException("Unable to save file to internal directory"));
@@ -63,15 +70,24 @@ public class PhotoService {
             photo.setHashtag(hashtagService.addHashTag(hashtag));
         log.info("Saving image...");
         photoRepository.save(photo);
-        return true;
     }
 
+    public void addPhotoToGroup(MultipartFile photoFile, String photoName, String hashtag, int userId, int groupId) throws HttpMediaTypeNotSupportedException, IllegalAccessException {
+        try {
+            groupServiceProxy.getGroup(groupId);
+        } catch (Exception e) {
+            throw new EntityNotFoundException("Group not found");
+        }
 
-    public boolean addPhotoToGroup(MultipartFile photoFile, String photoName, String hashtag, int userId, int groupId) throws HttpMediaTypeNotSupportedException {
         Photo photo = new Photo();
         if (!photoName.equals(""))
             photo.setName(photoName);
 
+        try {
+            GroupDTO group = groupServiceProxy.getGroup(groupId);
+        } catch (Exception e) {
+            throw (new EntityNotFoundException("Could not find group"));
+        }
 
         if (userIsInGroup(userId, groupId)) {
             if (!moveAndRenamePhoto(photoFile, photo.getSystemName(FilenameUtils.getExtension(photoFile.getOriginalFilename()))))
@@ -83,8 +99,7 @@ public class PhotoService {
                 photo.setHashtag(hashtagService.addHashTag(hashtag));
             log.info("Saving image...");
             photoRepository.save(photo);
-            return true;
-        } else return false;
+        } else throw new IllegalAccessException("Not authorized to perform this action");
     }
 
     private boolean moveAndRenamePhoto(MultipartFile photoFile, String newName) {
@@ -102,7 +117,7 @@ public class PhotoService {
         return true;
     }
 
-    public void addHashTagToPhoto(int photoId, PhotoDTO newPhoto) throws InvalidClassException {
+    public void addHashTagToPhoto(int photoId, PhotoPatchDTO newPhoto) throws InvalidClassException {
 
         Optional<Photo> photoOptional = photoRepository.findById(photoId);
 
@@ -130,13 +145,8 @@ public class PhotoService {
         }
     }
 
-    public void updatePhotos(List<Photo> photos) {
-        log.info("Updating photos...");
-        photoRepository.saveAll(photos);
-    }
-
-    public boolean deletePhoto(int photo_id, int userId) throws IllegalAccessException {
-        Optional<Photo> photoOptional = photoRepository.findById(photo_id);
+    public void deletePhoto(int userId, int photoId) throws IllegalAccessException {
+        Optional<Photo> photoOptional = photoRepository.findById(photoId);
         if (photoOptional.isPresent()) {
             Photo photo = (photoOptional).get();
             HashTag hashtag = photo.getHashtag();
@@ -146,12 +156,12 @@ public class PhotoService {
                 List<Photo> photos = hashtag.getPhotos();
                 photos.remove(photo);
                 hashtag.setPhotos(photos);
-                photoRepository.deleteById(photo_id);
+                photoRepository.deleteById(photoId);
                 hashtagService.updateHashTag(hashtag);
                 File file = new File(photo.getPhotoPath() + photo.getName());
                 if (file.delete())
                     log.info("Deleted photo successfully");
-                return true;
+
             } else {
                 throw (new IllegalAccessException("Not authorized to perform this action"));
             }
@@ -160,6 +170,11 @@ public class PhotoService {
 
     public List<PhotoDTO> getPhotosByHashtag(int hashtagId) {
         log.info("Searching for photos");
+        try {
+            hashtagService.getHashTagDTO(hashtagId);
+        } catch (Exception e) {
+            throw new EntityNotFoundException("Hashtag not found");
+        }
         List<Photo> photos = photoRepository.findAllByHashtagId(hashtagId);
         return toPhotoDTOs(photos);
     }
@@ -179,6 +194,12 @@ public class PhotoService {
     }
 
     public List<PhotoDTO> getGroupsPhotos(int userId, int groupId) throws IllegalAccessException {
+
+        try {
+            groupServiceProxy.getGroup(groupId);
+        } catch (Exception e) {
+            throw (new EntityNotFoundException("Could not retrieve group"));
+        }
         if (!userIsInGroup(userId, groupId)) {
             log.error("Not authorized to perform this action");
             throw (new IllegalAccessException("Not authorized to perform this action"));
@@ -188,11 +209,17 @@ public class PhotoService {
         return getGroupsPhotos(groupId);
     }
 
-    public List<PhotoDTO> getGroupsPhotos(int groupId) {
+    List<PhotoDTO> getGroupsPhotos(int groupId) {
+
         return toPhotoDTOs(photoRepository.findAllByGroupId(groupId));
     }
 
     public List<PhotoDTO> getUsersPhotos(int userId) {
+        try {
+            userServiceProxy.getUser(userId);
+        } catch (Exception e) {
+            throw new EntityNotFoundException("Could not find user");
+        }
         List<PhotoDTO> photoDTOS = new ArrayList<>();
         log.info("Retrieving photos...");
         List<Photo> photos = photoRepository.findAllByUserId(userId);
@@ -205,7 +232,7 @@ public class PhotoService {
         return photoDTOS;
     }
 
-    public Photo setPhotoInfo(Photo photo, String photoFilePath, int userId) {
+    private Photo setPhotoInfo(Photo photo, String photoFilePath, int userId) {
         log.info("Setting photo information");
         photo.setPhotoPath(photoFilePath);
         photo.setUserId(userId);
@@ -229,8 +256,6 @@ public class PhotoService {
                 return true;
         }
         return false;
-
-
     }
 
     private List<PhotoDTO> toPhotoDTOs(List<Photo> photos) {
@@ -245,4 +270,32 @@ public class PhotoService {
 
     }
 
+    public List<PhotoDTO> getHomePage(int userId, int pageNumber, int pageSize) {
+        List<UserDTO> userAndFollowing = new ArrayList<>();
+        try {
+            userAndFollowing.add(userServiceProxy.getUser(userId));
+            userAndFollowing.addAll(userServiceProxy.getUserFollowing(userId));
+        } catch (Exception e) {
+            throw new EntityNotFoundException("Could not find user");
+        }
+
+        List<Integer> userIds = new ArrayList<>();
+        for (UserDTO user : userAndFollowing) {
+            userIds.add(user.getUserId());
+        }
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        List<Photo> photos = photoRepository.findByUserIdInOrderByTimeStampDesc(userIds, pageable);
+
+        for (Photo photo : photos) {
+            if (photo.getGroupId() != 0 && !userIsInGroup(userId, photo.getGroupId()))
+                photos.remove(photo);
+        }
+
+        List<PhotoDTO> photoDTOS = toPhotoDTOs(photos);
+//        for (GroupDTO group : groupServiceProxy.getUserGroups(userId)) {
+//            photoDTOS.addAll(getGroupsPhotos(group.getId()));
+//        }
+
+        return photoDTOS;
+    }
 }
