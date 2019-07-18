@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Entity
 @Data
@@ -36,7 +37,7 @@ public class Photo {
 
     public String getSystemName(String extension) {
 
-        return name + " " + timeStamp + "." + extension;
+        return name + " " + timeStamp.toInstant(ZoneOffset.ofTotalSeconds(0)).toEpochMilli() + "." + extension;
     }
 
 }
