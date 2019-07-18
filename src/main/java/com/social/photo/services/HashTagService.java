@@ -3,6 +3,7 @@ package com.social.photo.services;
 import com.social.photo.dtos.HashTagDTO;
 import com.social.photo.dtos.PhotoDTO;
 import com.social.photo.entities.HashTag;
+import com.social.photo.proxies.GroupServiceProxy;
 import com.social.photo.repos.HashTagRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -21,6 +22,9 @@ public class HashTagService {
 
     @Autowired
     private PhotoService photoService;
+
+    @Autowired
+    private GroupServiceProxy groupServiceProxy;
 
     private ModelMapper modelMapper = new ModelMapper();
 
@@ -100,6 +104,12 @@ public class HashTagService {
 
     public Set<String> getGroupsTags(int groupId) {
         log.info("Retrieving hash tags");
+
+        try {
+            groupServiceProxy.getGroup(groupId);
+        } catch (Exception e) {
+            throw new EntityNotFoundException("Could not find group");
+        }
         List<PhotoDTO> photoDTOS = photoService.getGroupsPhotos(groupId);
         Set<String> hashTagNames = new HashSet<>();
 

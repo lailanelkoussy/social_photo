@@ -62,7 +62,7 @@ public class PhotoService {
         if (!photoName.equals(""))
             photo.setName(photoName);
 
-        if (!moveAndRenamePhoto(photoFile, photo.getSystemName(FilenameUtils.getExtension(photoFile.getOriginalFilename())))) {
+        if (!moveAndRenamePhoto(photo, photoFile, photo.getSystemName(FilenameUtils.getExtension(photoFile.getOriginalFilename())))) {
             throw (new HttpMediaTypeNotSupportedException("Unable to save file to internal directory"));
         }
         photo = setPhotoInfo(photo, filePath, userId);
@@ -90,7 +90,7 @@ public class PhotoService {
         }
 
         if (userIsInGroup(userId, groupId)) {
-            if (!moveAndRenamePhoto(photoFile, photo.getSystemName(FilenameUtils.getExtension(photoFile.getOriginalFilename()))))
+            if (!moveAndRenamePhoto(photo, photoFile, photo.getSystemName(FilenameUtils.getExtension(photoFile.getOriginalFilename()))))
                 throw (new HttpMediaTypeNotSupportedException("Unable to save file to internal directory"));
 
             photo = setPhotoInfo(photo, filePath, userId);
@@ -102,7 +102,7 @@ public class PhotoService {
         } else throw new IllegalAccessException("Not authorized to perform this action");
     }
 
-    private boolean moveAndRenamePhoto(MultipartFile photoFile, String newName) {
+    private boolean moveAndRenamePhoto(Photo photo, MultipartFile photoFile, String newName) {
 
         try {
             Files.copy(photoFile.getInputStream(), Paths.get(filePath + "/" + newName),
@@ -114,6 +114,7 @@ public class PhotoService {
             return false;
         }
 
+        photo.setName(newName);
         return true;
     }
 
@@ -234,7 +235,7 @@ public class PhotoService {
 
     private Photo setPhotoInfo(Photo photo, String photoFilePath, int userId) {
         log.info("Setting photo information");
-        photo.setPhotoPath(photoFilePath);
+        photo.setPhotoPath(photoFilePath + "/" + photo.getName());
         photo.setUserId(userId);
         return photo;
     }
@@ -291,11 +292,34 @@ public class PhotoService {
                 photos.remove(photo);
         }
 
+//        for (Photo photo : photos) {
+//            GroupDTO groupDTO = groupServiceProxy.getGroup(photo.getGroupId());
+//            if (!groupDTO.isActive()) {
+//                photos.remove(photo);
+//            }
+//        }
+
         List<PhotoDTO> photoDTOS = toPhotoDTOs(photos);
 //        for (GroupDTO group : groupServiceProxy.getUserGroups(userId)) {
 //            photoDTOS.addAll(getGroupsPhotos(group.getId()));
 //        }
 
         return photoDTOS;
+    }
+
+    public void deleteUsersPhotos(int userId) throws IllegalAccessException {
+        log.info("Deleting users photos");
+        List<PhotoDTO> photos = getUsersPhotos(userId);
+        for (PhotoDTO photo : photos) {
+            deletePhoto(userId, photo.getId());
+        }
+    }
+
+    public void deleteGroupsPhotos(int groupId) {
+        photoRepository.deleteAllByGroupId(groupId);
+    }
+
+    public void removeUsersGroupPhotos(int userId, int groupId) {
+        photoRepository.deleteAllByUserIdAndGroupId(userId, groupId);
     }
 }

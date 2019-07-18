@@ -5,9 +5,7 @@ import com.social.photo.dtos.PhotoPatchDTO;
 import com.social.photo.services.PhotoService;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -125,5 +123,39 @@ public class PhotoController {
             @ApiParam(value = "Name of hashtag to add to photo ", required = true) @RequestBody PhotoPatchDTO photo) throws InvalidClassException {
         photoService.addHashTagToPhoto(id, photo);
     }
+
+    @ApiOperation(value = "Delete all of a user's photos")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully deleted objects"),
+            @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
+    @DeleteMapping(value = "/all/user/{userId}")
+    public void deleteUsersPhotos(
+            @ApiParam(value = "User's id", required = true)@PathVariable int userId) throws IllegalAccessException {
+        photoService.deleteUsersPhotos(userId);
+    }
+
+    @ApiOperation(value = "Delete all of a group's photos")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully deleted objects"),
+            @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
+    @DeleteMapping(value = "/all/group/{groupId}")
+    public void deleteGroupsPhotos(
+            @ApiParam(value = "Group's id", required = true)
+            @PathVariable int groupId) {
+        photoService.deleteGroupsPhotos(groupId);
+    }
+
+    @ApiOperation(value = "Delete all of a users's photos in a group")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully deleted objects"),
+            @ApiResponse(code = 404, message = "The resource you were trying to reach is not found")})
+    @DeleteMapping(value = "/all/group/{groupId}/user/{userId}")
+    public void deleteUsersGroupPhotos(
+            @ApiParam(value = "User's id", required = true)
+            @PathVariable int userId,
+            @ApiParam(value = "Group's id", required = true)@PathVariable int groupId) {
+        photoService.removeUsersGroupPhotos(userId, groupId);
+    }
+
 
 }
